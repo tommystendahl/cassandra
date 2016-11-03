@@ -2151,7 +2151,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         final long truncatedAt;
         final CommitLogPosition replayAfter;
 
-        if (keyspace.getMetadata().params.durableWrites || DatabaseDescriptor.isAutoSnapshot())
+        if (keyspace.getMetadata().params.durableWrites || isAutoSnapshotEnabled())
         {
             replayAfter = forceBlockingFlush();
             viewManager.forceBlockingFlush();
@@ -2184,7 +2184,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                 logger.debug("Discarding sstable data for truncated CF + indexes");
                 data.notifyTruncated(truncatedAt);
 
-                if (DatabaseDescriptor.isAutoSnapshot())
+                if (isAutoSnapshotEnabled())
                     snapshot(Keyspace.getTimestampedSnapshotNameWithPrefix(name, SNAPSHOT_TRUNCATE_PREFIX));
 
                 discardSSTables(truncatedAt);
@@ -2537,6 +2537,11 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
     public boolean isKeyCacheEnabled()
     {
         return metadata.params.caching.cacheKeys() && CacheService.instance.keyCache.getCapacity() > 0;
+    }
+
+    public boolean isAutoSnapshotEnabled()
+    {
+        return metadata.params.allowAutoSnapshot && DatabaseDescriptor.isAutoSnapshot();
     }
 
     /**

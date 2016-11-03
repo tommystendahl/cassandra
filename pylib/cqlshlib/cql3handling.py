@@ -41,6 +41,7 @@ NONALTERBALE_KEYSPACES = ('system', 'system_schema')
 class Cql3ParsingRuleSet(CqlParsingRuleSet):
 
     columnfamily_layout_options = (
+        ('allow_auto_snapshot', None),
         ('bloom_filter_fp_chance', None),
         ('comment', None),
         ('dclocal_read_repair_chance', 'local_read_repair_chance'),
@@ -508,6 +509,8 @@ def cf_prop_val_completer(ctxt, cass):
         return [Hint('<integer>')]
     if this_opt in ('cdc'):
         return [Hint('<true|false>')]
+    if this_opt == 'allow_auto_snapshot':
+        return [Hint('<boolean>')]
     return [Hint('<option_value>')]
 
 

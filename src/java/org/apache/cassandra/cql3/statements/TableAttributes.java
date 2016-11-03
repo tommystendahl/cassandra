@@ -79,6 +79,9 @@ public final class TableAttributes extends PropertyDefinitions
 
     private TableParams build(TableParams.Builder builder)
     {
+        if (hasOption(Option.ALLOW_AUTO_SNAPSHOT))
+            builder.allowAutoSnapshot(getBoolean(Option.ALLOW_AUTO_SNAPSHOT));
+
         if (hasOption(Option.BLOOM_FILTER_FP_CHANCE))
             builder.bloomFilterFpChance(getDouble(Option.BLOOM_FILTER_FP_CHANCE));
 
@@ -148,6 +151,13 @@ public final class TableAttributes extends PropertyDefinitions
         {
             throw new SyntaxException(String.format("Invalid double value %s for crc_check_chance.'", value));
         }
+    }
+
+    private boolean getBoolean(Option option)
+    {
+        String value = getString(option);
+
+        return value.toLowerCase().matches("(1|true|yes)");
     }
 
     private double getDouble(Option option)

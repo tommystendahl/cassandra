@@ -580,7 +580,7 @@ public class Schema
 
             unload(cfm);
 
-            if (DatabaseDescriptor.isAutoSnapshot())
+            if (cfs.isAutoSnapshotEnabled())
                 cfs.snapshot(snapshotName);
             Keyspace.open(ksm.name).dropCf(cfm.cfId);
 
@@ -644,7 +644,7 @@ public class Schema
 
         CompactionManager.instance.interruptCompactionFor(Collections.singleton(cfm), true);
 
-        if (DatabaseDescriptor.isAutoSnapshot())
+        if (cfs.isAutoSnapshotEnabled())
             cfs.snapshot(Keyspace.getTimestampedSnapshotNameWithPrefix(cfs.name, ColumnFamilyStore.SNAPSHOT_DROP_PREFIX));
         Keyspace.open(ksName).dropCf(cfm.cfId);
         MigrationManager.instance.notifyDropColumnFamily(cfm);
@@ -699,7 +699,7 @@ public class Schema
 
         CompactionManager.instance.interruptCompactionFor(Collections.singleton(view.metadata), true);
 
-        if (DatabaseDescriptor.isAutoSnapshot())
+        if (cfs.isAutoSnapshotEnabled())
             cfs.snapshot(Keyspace.getTimestampedSnapshotName(cfs.name));
         Keyspace.open(ksName).dropCf(view.metadata.cfId);
         Keyspace.open(ksName).viewManager.reload();

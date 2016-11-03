@@ -587,7 +587,8 @@ class TestCqlshCompletion(CqlshCompletionCase):
         self.trycompletions(prefix + ' new_table (col_a int PRIMARY KEY) W',
                             immediate='ITH ')
         self.trycompletions(prefix + ' new_table (col_a int PRIMARY KEY) WITH ',
-                            choices=['bloom_filter_fp_chance', 'compaction',
+                            choices=['allow_auto_snapshot',
+                                     'bloom_filter_fp_chance', 'compaction',
                                      'compression',
                                      'dclocal_read_repair_chance',
                                      'default_time_to_live', 'gc_grace_seconds',

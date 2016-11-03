@@ -28,6 +28,7 @@ import org.apache.cassandra.cql3.ColumnIdentifier;
 import org.apache.cassandra.cql3.Operator;
 import org.apache.cassandra.cql3.statements.IndexTarget;
 import org.apache.cassandra.db.CompactTables;
+import org.apache.cassandra.db.Keyspace;
 import org.apache.cassandra.db.LegacyLayout;
 import org.apache.cassandra.db.WriteType;
 import org.apache.cassandra.db.compaction.AbstractCompactionStrategy;
@@ -262,6 +263,7 @@ public class ThriftConversion
 
             boolean isCompound = !isSuper && (rawComparator instanceof CompositeType);
             boolean isCounter = defaultValidator instanceof CounterColumnType;
+            boolean allowAutoSnapshot = true;
 
             // If it's a thrift table creation, adds the default CQL metadata for the new table
             if (isCreation)
@@ -273,6 +275,10 @@ public class ThriftConversion
                                       rawComparator,
                                       subComparator,
                                       defaultValidator);
+            }
+            else
+            {
+                allowAutoSnapshot = Keyspace.open(cf_def.keyspace).getColumnFamilyStore(cf_def.name).metadata.params.allowAutoSnapshot;
             }
 
             // We do not allow Thrift views, so we always set it to false
@@ -296,6 +302,8 @@ public class ThriftConversion
                                                 rawComparator,
                                                 subComparator,
                                                 cf_def.column_metadata));
+
+            newCFMD.allowAutoSnapshot(allowAutoSnapshot);
 
             if (cf_def.isSetGc_grace_seconds())
                 newCFMD.gcGraceSeconds(cf_def.gc_grace_seconds);

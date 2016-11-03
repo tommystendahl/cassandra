@@ -25,12 +25,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.apache.cassandra.SchemaLoader;
 import org.apache.cassandra.config.CFMetaData;
 import org.apache.cassandra.config.ColumnDefinition;
@@ -52,9 +52,11 @@ import org.apache.cassandra.thrift.IndexType;
 import org.apache.cassandra.thrift.ThriftConversion;
 import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.cassandra.utils.FBUtilities;
+import org.apache.cassandra.utils.Pair;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class SchemaKeyspaceTest
 {
@@ -160,6 +162,44 @@ public class SchemaKeyspaceTest
 
         metadata = Schema.instance.getCFMetaData(keyspace, "test");
         assertEquals(extensions, metadata.params.extensions);
+    }
+
+    @Test
+    public void testAutoSnapshotEnabeld() throws IOException
+    {
+        String keyspace = "AutoSnapshot";
+        String table = "table1";
+
+        createTable(keyspace, "CREATE TABLE " + table +" (a text primary key, b int) WITH allow_auto_snapshot = true");
+
+        ColumnFamilyStore cfs = Keyspace.open(keyspace).getColumnFamilyStore(table);
+
+        assertTrue(cfs.isAutoSnapshotEnabled());
+
+        Schema.instance.dropTable(keyspace, table);
+
+        Map<String, Pair<Long, Long>> snapshots = cfs.getSnapshotDetails();
+
+        assertFalse(snapshots.isEmpty());
+    }
+
+    @Test
+    public void testAutoSnapshotDisabled() throws IOException
+    {
+        String keyspace = "AutoSnapshot";
+        String table = "table2";
+
+        createTable(keyspace, "CREATE TABLE " + table +" (a text primary key, b int) WITH allow_auto_snapshot = false");
+
+        ColumnFamilyStore cfs = Keyspace.open(keyspace).getColumnFamilyStore(table);
+
+        assertFalse(cfs.isAutoSnapshotEnabled());
+
+        Schema.instance.dropTable(keyspace, table);
+
+        Map<String, Pair<Long, Long>> snapshots = cfs.getSnapshotDetails();
+
+        assertTrue(snapshots.isEmpty());
     }
 
     private static void updateTable(String keyspace, CFMetaData oldTable, CFMetaData newTable)

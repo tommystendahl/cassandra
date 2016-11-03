@@ -98,6 +98,7 @@ public final class SchemaKeyspace
                 "CREATE TABLE %s ("
                 + "keyspace_name text,"
                 + "table_name text,"
+                + "allow_auto_snapshot boolean,"
                 + "bloom_filter_fp_chance double,"
                 + "caching frozen<map<text, text>>,"
                 + "comment text,"
@@ -163,6 +164,7 @@ public final class SchemaKeyspace
                 + "base_table_id uuid,"
                 + "base_table_name text,"
                 + "where_clause text,"
+                + "allow_auto_snapshot boolean,"
                 + "bloom_filter_fp_chance double,"
                 + "caching frozen<map<text, text>>,"
                 + "comment text,"
@@ -512,7 +514,8 @@ public final class SchemaKeyspace
 
     private static void addTableParamsToRowBuilder(TableParams params, Row.SimpleBuilder builder)
     {
-        builder.add("bloom_filter_fp_chance", params.bloomFilterFpChance)
+        builder.add("allow_auto_snapshot", params.allowAutoSnapshot)
+               .add("bloom_filter_fp_chance", params.bloomFilterFpChance)
                .add("comment", params.comment)
                .add("dclocal_read_repair_chance", params.dcLocalReadRepairChance)
                .add("default_time_to_live", params.defaultTimeToLive)
@@ -999,6 +1002,7 @@ public final class SchemaKeyspace
     public static TableParams createTableParamsFromRow(UntypedResultSet.Row row)
     {
         return TableParams.builder()
+                          .allowAutoSnapshot(row.getBoolean("allow_auto_snapshot"))
                           .bloomFilterFpChance(row.getDouble("bloom_filter_fp_chance"))
                           .caching(CachingParams.fromMap(row.getFrozenTextMap("caching")))
                           .comment(row.getString("comment"))

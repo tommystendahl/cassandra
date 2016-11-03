@@ -35,6 +35,7 @@ public final class TableParams
 
     public enum Option
     {
+        ALLOW_AUTO_SNAPSHOT,
         BLOOM_FILTER_FP_CHANCE,
         CACHING,
         COMMENT,
@@ -68,8 +69,10 @@ public final class TableParams
     public static final int DEFAULT_MIN_INDEX_INTERVAL = 128;
     public static final int DEFAULT_MAX_INDEX_INTERVAL = 2048;
     public static final double DEFAULT_CRC_CHECK_CHANCE = 1.0;
+    public static final boolean DEFAULT_ALLOW_AUTO_SNAPSHOT = true;
 
     public final String comment;
+    public final boolean allowAutoSnapshot;
     public final double readRepairChance;
     public final double dcLocalReadRepairChance;
     public final double bloomFilterFpChance;
@@ -89,6 +92,7 @@ public final class TableParams
     private TableParams(Builder builder)
     {
         comment = builder.comment;
+        allowAutoSnapshot = builder.allowAutoSnapshot;
         readRepairChance = builder.readRepairChance;
         dcLocalReadRepairChance = builder.dcLocalReadRepairChance;
         bloomFilterFpChance = builder.bloomFilterFpChance == null
@@ -115,7 +119,8 @@ public final class TableParams
 
     public static Builder builder(TableParams params)
     {
-        return new Builder().bloomFilterFpChance(params.bloomFilterFpChance)
+        return new Builder().allowAutoSnapshot(params.allowAutoSnapshot)
+                            .bloomFilterFpChance(params.bloomFilterFpChance)
                             .caching(params.caching)
                             .comment(params.comment)
                             .compaction(params.compaction)
@@ -207,6 +212,7 @@ public final class TableParams
         TableParams p = (TableParams) o;
 
         return comment.equals(p.comment)
+            && allowAutoSnapshot == p.allowAutoSnapshot
             && readRepairChance == p.readRepairChance
             && dcLocalReadRepairChance == p.dcLocalReadRepairChance
             && bloomFilterFpChance == p.bloomFilterFpChance
@@ -228,6 +234,7 @@ public final class TableParams
     public int hashCode()
     {
         return Objects.hashCode(comment,
+                                allowAutoSnapshot,
                                 readRepairChance,
                                 dcLocalReadRepairChance,
                                 bloomFilterFpChance,
@@ -250,6 +257,7 @@ public final class TableParams
     {
         return MoreObjects.toStringHelper(this)
                           .add(Option.COMMENT.toString(), comment)
+                          .add(Option.ALLOW_AUTO_SNAPSHOT.toString(), allowAutoSnapshot)
                           .add(Option.READ_REPAIR_CHANCE.toString(), readRepairChance)
                           .add(Option.DCLOCAL_READ_REPAIR_CHANCE.toString(), dcLocalReadRepairChance)
                           .add(Option.BLOOM_FILTER_FP_CHANCE.toString(), bloomFilterFpChance)
@@ -271,6 +279,7 @@ public final class TableParams
     public static final class Builder
     {
         private String comment = DEFAULT_COMMENT;
+        private boolean allowAutoSnapshot = DEFAULT_ALLOW_AUTO_SNAPSHOT;
         private double readRepairChance = DEFAULT_READ_REPAIR_CHANCE;
         private double dcLocalReadRepairChance = DEFAULT_DCLOCAL_READ_REPAIR_CHANCE;
         private Double bloomFilterFpChance;
@@ -299,6 +308,12 @@ public final class TableParams
         public Builder comment(String val)
         {
             comment = val;
+            return this;
+        }
+
+        public Builder allowAutoSnapshot(boolean val)
+        {
+            allowAutoSnapshot = val;
             return this;
         }
 
