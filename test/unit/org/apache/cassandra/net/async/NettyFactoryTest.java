@@ -18,7 +18,7 @@
 
 package org.apache.cassandra.net.async;
 
-import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Optional;
 
 import com.google.common.net.InetAddresses;
@@ -43,7 +43,6 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.cassandra.auth.AllowAllInternodeAuthenticator;
 import org.apache.cassandra.auth.IInternodeAuthenticator;
 import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.config.EncryptionOptions;
 import org.apache.cassandra.config.EncryptionOptions.ServerEncryptionOptions;
 import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.locator.InetAddressAndPort;
@@ -302,6 +301,24 @@ public class NettyFactoryTest
         initializer.initChannel(channel);
         Assert.assertNotNull(channel.pipeline().get(SslHandler.class));
         Assert.assertNull(channel.pipeline().get(OptionalSslHandler.class));
+    }
+
+    @Test
+    public void createInboundInitializer_WithLegacySsl() throws Exception
+    {
+        ServerEncryptionOptions encryptionOptions = encOptions();
+        encryptionOptions.enabled = true;
+        encryptionOptions.optional = false;
+        encryptionOptions.enable_legacy_ssl_storage_port = true;
+        InboundInitializer initializer = new InboundInitializer(AUTHENTICATOR, encryptionOptions, channelGroup, true);
+        NioSocketChannel channel = new NioSocketChannel();
+        Assert.assertNull(channel.pipeline().get(SslHandler.class));
+        initializer.initChannel(channel);
+        Assert.assertNotNull(channel.pipeline().get(SslHandler.class));
+        Assert.assertNull(channel.pipeline().get(OptionalSslHandler.class));
+        SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+        String[] protocols = sslHandler.engine().getEnabledProtocols();
+        Assert.assertTrue(Arrays.asList(protocols).contains("SSLv2Hello"));
     }
 
     @Test

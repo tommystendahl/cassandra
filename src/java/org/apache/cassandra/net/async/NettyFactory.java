@@ -2,6 +2,8 @@ package org.apache.cassandra.net.async;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.stream.Stream;
 import java.util.zip.Checksum;
 
 import javax.annotation.Nullable;
@@ -268,12 +270,20 @@ public final class NettyFactory
         private final IInternodeAuthenticator authenticator;
         private final ServerEncryptionOptions encryptionOptions;
         private final ChannelGroup channelGroup;
+        private final boolean legacyConnection;
 
         public InboundInitializer(IInternodeAuthenticator authenticator, ServerEncryptionOptions encryptionOptions, ChannelGroup channelGroup)
+        {
+            this(authenticator, encryptionOptions, channelGroup, false);
+        }
+
+        //This is only used to set up ssl_storage_port which is only used for upgrade from legacy versions, can be removed in 5.0
+        public InboundInitializer(IInternodeAuthenticator authenticator, ServerEncryptionOptions encryptionOptions, ChannelGroup channelGroup, boolean legacyConnection)
         {
             this.authenticator = authenticator;
             this.encryptionOptions = encryptionOptions;
             this.channelGroup = channelGroup;
+            this.legacyConnection = legacyConnection;
         }
 
         @Override
@@ -294,6 +304,14 @@ public final class NettyFactory
                     SslContext sslContext = SSLFactory.getSslContext(encryptionOptions, true, SSLFactory.ConnectionType.INTERNODE_MESSAGING, SSLFactory.SocketType.SERVER);
                     InetSocketAddress peer = encryptionOptions.require_endpoint_verification ? channel.remoteAddress() : null;
                     SslHandler sslHandler = newSslHandler(channel, sslContext, peer);
+                    if(legacyConnection)
+                    {
+                        SSLEngine engine = sslHandler.engine();
+                        String[] protocols = engine.getEnabledProtocols();
+                        String[] sslV2Hello = {"SSLv2Hello"};
+                        if (!Arrays.stream(protocols).anyMatch(sslV2Hello[0]::equals))
+                            engine.setEnabledProtocols(Stream.concat(Arrays.stream(sslV2Hello), Arrays.stream(protocols)).toArray(String[]::new));
+                    }
                     logger.trace("creating inbound netty SslContext: context={}, engine={}", sslContext.getClass().getName(), sslHandler.engine().getClass().getName());
                     pipeline.addFirst(SSL_CHANNEL_HANDLER_NAME, sslHandler);
                 }

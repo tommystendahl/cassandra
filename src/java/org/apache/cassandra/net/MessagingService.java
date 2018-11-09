@@ -791,7 +791,7 @@ public final class MessagingService implements MessagingServiceMBean
 
             InetAddressAndPort localAddr = InetAddressAndPort.getByAddressOverrideDefaults(localEp.address, DatabaseDescriptor.getSSLStoragePort());
             ChannelGroup channelGroup = new DefaultChannelGroup("LegacyEncryptedInternodeMessagingGroup", NettyFactory.executorForChannelGroups());
-            InboundInitializer initializer = new InboundInitializer(authenticator, legacyEncOptions, channelGroup);
+            InboundInitializer initializer = new InboundInitializer(authenticator, legacyEncOptions, channelGroup, true);
             Channel encryptedChannel = NettyFactory.instance.createInboundChannel(localAddr, initializer, receiveBufferSize);
             serverChannels.add(new ServerChannel(encryptedChannel, channelGroup, localAddr, ServerChannel.SecurityLevel.REQUIRED));
         }
