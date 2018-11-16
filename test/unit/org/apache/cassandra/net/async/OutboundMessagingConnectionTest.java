@@ -518,4 +518,23 @@ public class OutboundMessagingConnectionTest
         Assert.assertEquals(InetAddressAndPort.getByAddressOverrideDefaults(REMOTE_ADDR.address, DatabaseDescriptor.getSSLStoragePort()), omc.getConnectionId().connectionAddress());
         Assert.assertEquals(peerVersion, omc.getTargetVersion());
     }
+
+    @Test
+    public void maybeUpdateConnectionId_3_X_VersionAfterFirstUpdate()
+    {
+        ServerEncryptionOptions encryptionOptions = new ServerEncryptionOptions();
+        encryptionOptions.enabled = true;
+        encryptionOptions.internode_encryption = ServerEncryptionOptions.InternodeEncryption.all;
+        DatabaseDescriptor.setInternodeMessagingEncyptionOptions(encryptionOptions);
+        int peerVersion = MessagingService.VERSION_30;
+        MessagingService.instance().setVersion(connectionId.remote(), MessagingService.VERSION_30);
+        omc = new OutboundMessagingConnection(connectionId, encryptionOptions, Optional.empty(), new AllowAllInternodeAuthenticator());
+
+        OutboundConnectionIdentifier connectionId = omc.getConnectionId();
+        omc.maybeUpdateConnectionId();
+        Assert.assertNotEquals(connectionId, omc.getConnectionId());
+        Assert.assertEquals(InetAddressAndPort.getByAddressOverrideDefaults(REMOTE_ADDR.address, DatabaseDescriptor.getSSLStoragePort()), omc.getConnectionId().remote());
+        Assert.assertEquals(InetAddressAndPort.getByAddressOverrideDefaults(REMOTE_ADDR.address, DatabaseDescriptor.getSSLStoragePort()), omc.getConnectionId().connectionAddress());
+        Assert.assertEquals(peerVersion, omc.getTargetVersion());
+    }
 }

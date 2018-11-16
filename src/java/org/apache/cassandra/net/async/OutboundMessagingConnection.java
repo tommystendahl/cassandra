@@ -149,6 +149,13 @@ public class OutboundMessagingConnection
      */
     private int targetVersion;
 
+    /**
+     * Has the connection been updated to use the {@link Config#ssl_storage_port}.
+     *
+     * Note: only used during upgrade, can be removed in 5.0.
+     */
+    private boolean connectionUpdated = false;
+
     OutboundMessagingConnection(OutboundConnectionIdentifier connectionId,
                                 ServerEncryptionOptions encryptionOptions,
                                 Optional<CoalescingStrategy> coalescingStrategy,
@@ -304,11 +311,12 @@ public class OutboundMessagingConnection
         if (encryptionOptions != null)
         {
             int version = MessagingService.instance().getVersion(connectionId.remote());
-            if (version < targetVersion)
+            if (version < MessagingService.current_version && !connectionUpdated)
             {
                 targetVersion = version;
                 int port = MessagingService.instance().portFor(connectionId.remote());
                 connectionId = connectionId.withNewConnectionPort(port);
+                connectionUpdated = true;
                 logger.debug("changing connectionId to {}, with a different port for secure communication, because peer version is {}", connectionId, version);
             }
         }
