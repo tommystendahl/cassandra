@@ -221,8 +221,9 @@ public class PipelineConfigurator
                             {
                                 // Connection uses SSL/TLS, replace the detection handler with a SslHandler and so use
                                 // encryption.
-                                InetSocketAddress peer = encryptionOptions.require_endpoint_verification ? (InetSocketAddress) channel.remoteAddress() : null;
-                                SslHandler sslHandler = newSslHandler(channel, sslContext, peer);
+                                InetSocketAddress peer = (InetSocketAddress) channel.remoteAddress();
+                                SslHandler sslHandler = newSslHandler(channel, sslContext, peer,
+                                                                      encryptionOptions.require_endpoint_verification);
                                 channelHandlerContext.pipeline().replace(SSL_HANDLER, SSL_HANDLER, sslHandler);
                             }
                             else
@@ -241,8 +242,10 @@ public class PipelineConfigurator
                                                                              encryptionOptions.getClientAuth(),
                                                                              ISslContextFactory.SocketType.SERVER,
                                                                              SSL_FACTORY_CONTEXT_DESCRIPTION);
-                    InetSocketAddress peer = encryptionOptions.require_endpoint_verification ? (InetSocketAddress) channel.remoteAddress() : null;
-                    channel.pipeline().addFirst(SSL_HANDLER, newSslHandler(channel, sslContext, peer));
+
+                    InetSocketAddress peer = (InetSocketAddress) channel.remoteAddress();
+                    channel.pipeline().addFirst(SSL_HANDLER, newSslHandler(channel, sslContext, peer,
+                                                                           encryptionOptions.require_endpoint_verification));
                 };
             default:
                 throw new IllegalStateException("Unrecognized TLS encryption policy: " + this.tlsEncryptionPolicy);

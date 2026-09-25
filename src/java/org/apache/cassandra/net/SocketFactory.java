@@ -216,20 +216,50 @@ public final class SocketFactory
     }
 
     /**
-     * Creates a new {@link SslHandler} from provided SslContext.
-     * @param peer enables endpoint verification for remote address when not null
+     * Creates a new {@link SslHandler} from provided SslContext, coupling peer-host provisioning to endpoint
+     * identification: when {@code peer} is non-null the engine is built with the peer host/port <em>and</em> HTTPS
+     * endpoint identification is enabled.
+     *
+     * <p>This overload preserves the historical, coupled semantics and is retained for internode call sites. New
+     * callers that need the peer address available on the engine without enabling endpoint identification should use
+     * {@link #newSslHandler(Channel, SslContext, InetSocketAddress, boolean)}.
+     *
+     * @param peer when non-null, provisions the peer host/port on the engine and enables HTTPS endpoint verification
      */
     public static SslHandler newSslHandler(Channel channel, SslContext sslContext, @Nullable InetSocketAddress peer)
     {
-        if (peer == null)
-            return sslContext.newHandler(channel.alloc());
+        return newSslHandler(channel, sslContext, peer, peer != null);
+    }
 
-        logger.debug("Creating SSL handler for {}:{}", peer.getHostString(), peer.getPort());
-        SslHandler sslHandler = sslContext.newHandler(channel.alloc(), peer.getHostString(), peer.getPort());
-        SSLEngine engine = sslHandler.engine();
-        SSLParameters sslParameters = engine.getSSLParameters();
-        sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-        engine.setSSLParameters(sslParameters);
+    /**
+     * Creates a new {@link SslHandler} from provided SslContext, decoupling peer-host provisioning from HTTPS endpoint
+     * identification.
+     *
+     * @param peer                   when non-null, provisions the peer host/port on the engine (no DNS lookup)
+     * @param verifyEndpointIdentity when true, enables RFC 2818 (HTTPS) endpoint identification on the engine
+     */
+    public static SslHandler newSslHandler(Channel channel, SslContext sslContext, @Nullable InetSocketAddress peer, boolean verifyEndpointIdentity)
+    {
+        SslHandler sslHandler;
+        if (peer == null)
+        {
+            sslHandler = sslContext.newHandler(channel.alloc());
+        }
+        else
+        {
+            // Use the numeric IP literal so that provisioning the peer host never triggers a reverse DNS lookup.
+            String peerHost = peer.getAddress() != null ? peer.getAddress().getHostAddress() : peer.getHostString();
+            logger.debug("Creating SSL handler for {}:{}", peerHost, peer.getPort());
+            sslHandler = sslContext.newHandler(channel.alloc(), peerHost, peer.getPort());
+        }
+
+        if (verifyEndpointIdentity)
+        {
+            SSLEngine engine = sslHandler.engine();
+            SSLParameters sslParameters = engine.getSSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            engine.setSSLParameters(sslParameters);
+        }
         return sslHandler;
     }
 
